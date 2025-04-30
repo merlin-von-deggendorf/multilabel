@@ -1,0 +1,6 @@
+dataset:
+https://data.mendeley.com/datasets/tywbtsjrjv/1
+removed some data
+extract labels from foldername
+get all unique labels
+string id mapper
