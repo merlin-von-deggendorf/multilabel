@@ -12,7 +12,7 @@ class ImageLabel:
         self.labels = labels
 
 class CustomImageDataset(Dataset):
-    def __init__(self, root_dir,device):
+    def __init__(self, root_dir,device,string_id_mapper: StringIDMapper=None):
         self.transform =transforms.Compose([
             transforms.Resize(256),            # Resize the smaller edge to 256 while keeping the aspect ratio.
             transforms.CenterCrop(224),        # Crop the center 224x224 region.
@@ -24,7 +24,10 @@ class CustomImageDataset(Dataset):
         self.device = device
         self.samples:list[ImageLabel] = []
         # list all subfolders
-        self.string_id_mapper = labeler.get_unique_labels(root_dir)
+        if string_id_mapper is None:
+            self.string_id_mapper = labeler.get_unique_labels(root_dir)
+        else:
+            self.string_id_mapper = string_id_mapper
         self.num_classes =self.string_id_mapper.__len__()
         subfolders=labeler.list_folders(root_dir)
         for subfolder in subfolders:
