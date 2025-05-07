@@ -27,7 +27,7 @@ class CircleModel(torch.nn.Module):
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = optim.Adam(self.parameters(), lr=learning_rate)
-        
+        self.losses = []
         for epoch in range(num_epochs):
             
             self.train()
@@ -40,6 +40,7 @@ class CircleModel(torch.nn.Module):
                 optimizer.step()
                 avg_loss += loss.item()
             avg_loss /= len(dataloader)
+            self.losses.append(avg_loss)
             if epoch % 100 == 0:
                 print(f"Epoch {epoch}/{num_epochs}, Loss: {avg_loss:.4f}")
             if avg_loss < early_stopping:
@@ -58,9 +59,9 @@ class CircleModel(torch.nn.Module):
                 correct+=prediction.eq(y_batch).sum().item()
                 total += y_batch.size(0)
             accuracy = correct / total
-            print(f"Accuracy: {accuracy:.4f}")
+            print(f"Accuracy: {accuracy:.4f} correct: {correct} total: {total}")
 
-    def train_and_evaluate(self, dataset,split=0.8, num_epochs=1000, batch_size=32, learning_rate=0.001, early_stopping=0.05):
+    def train_and_evaluate(self, dataset,split=0.8, num_epochs=1000, batch_size=32, learning_rate=0.001, early_stopping=0.1):
         # Split the dataset into training and validation sets
         train_size = int(split * len(dataset))
         val_size = len(dataset) - train_size
@@ -73,7 +74,15 @@ class CircleModel(torch.nn.Module):
         self.evaluate(val_dataset,batch_size=batch_size)
 
 
-
+    def plot_losses(self):
+        import matplotlib.pyplot as plt
+        plt.figure()
+        plt.plot(self.losses, label="train loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Training Loss Curve")
+        plt.legend()
+        plt.show()
             
 
 
@@ -81,7 +90,8 @@ circle_count=8
 circle_model = CircleModel(numCircles=circle_count,neurons_per_circle=4)
 circle_model=circle_model.to(device)
 dataset = CircleSet(minX=0, minY=0, maxX=100, maxY=100, minRadius=10, maxRadius=30, numCircles=circle_count*-1, numPoints=500)
-circle_model.train_and_evaluate(dataset,split=0.8, num_epochs=5000, batch_size=1024, learning_rate=0.001, early_stopping=0.005)
+circle_model.train_and_evaluate(dataset,split=0.8, num_epochs=50000, batch_size=1024, learning_rate=0.001, early_stopping=0.05)
+circle_model.plot_losses()
 # dataset.display()
 # print(f'device: {device}')
 # dataset.print()
