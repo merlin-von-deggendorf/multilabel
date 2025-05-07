@@ -14,7 +14,7 @@ class CircleSet(Dataset):
         self.maxY = maxY
         self.minRadius = minRadius
         self.maxRadius = maxRadius
-        self.oneHot = numCircles > 0
+        self.multiHot = numCircles > 0
         self.numCircles = numCircles if numCircles > 0 else numCircles * -1
         self.circles: list[tuple[float, float, float]] = []
         self.num_classes = self.numCircles
@@ -47,7 +47,7 @@ class CircleSet(Dataset):
         self.x= []
         self.y= []
         # get random points
-        if self.oneHot:
+        if self.multiHot:
             for i in range(numPoints):
                 x = random.uniform(minX, maxX)
                 y = random.uniform(minY, maxY)
@@ -63,11 +63,11 @@ class CircleSet(Dataset):
             x, y = point
             self.x.append([x, y])
             circles = self.circles_of_point(point)
-            if self.oneHot:
-                one_hot = [0] * self.numCircles
+            if self.multiHot:
+                multi_hot = [0] * self.numCircles
                 for circle in circles:
-                    one_hot[circle] = 1
-                self.y.append(one_hot)
+                    multi_hot[circle] = 1
+                self.y.append(multi_hot)
             else:
                 # if the point is inside a circle, set the label to the index of the circle
                 if len(circles) > 0:
@@ -76,7 +76,7 @@ class CircleSet(Dataset):
                     self.y.append(-1)
             
         self.x_tensor = torch.tensor(self.x, dtype=torch.float32, device=device)
-        self.y_tensor = torch.tensor(self.y, dtype=torch.float32, device=device) if self.oneHot else torch.tensor(self.y, dtype=torch.long, device=device)
+        self.y_tensor = torch.tensor(self.y, dtype=torch.float32, device=device) if self.multiHot else torch.tensor(self.y, dtype=torch.long, device=device)
         
 
 
@@ -98,7 +98,7 @@ class CircleSet(Dataset):
 
     def print(self):
         for x,y in self:
-            if self.oneHot:
+            if self.multiHot:
                 print(f"point: {x}, label: {y}")
             else:
                 print(f"point: X:{x[0]:.2f} Y:{x[1]:.2f}, circle nr: {y}")
