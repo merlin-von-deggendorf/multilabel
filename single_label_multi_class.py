@@ -91,6 +91,7 @@ circle_count=8
 circle_model = CircleModel(numCircles=circle_count,neurons_per_circle=4)
 circle_model=circle_model.to(device)
 dataset = CircleSet(minX=0, minY=0, maxX=100, maxY=100, minRadius=10, maxRadius=30, numCircles=circle_count*-1, numPoints=1024)
+# dataset.display()
 circle_model.train_and_evaluate(dataset,split=0.8, num_epochs=50000, batch_size=1024, learning_rate=0.001, early_stopping=0.05)
 circle_model.plot_losses()
 
