@@ -105,10 +105,16 @@ class CircleSet(Dataset):
                 
                 
     
-    def display(self):
+    def display(self,circle_id=None):
         fig, ax = plt.subplots()
-        # draw each circle
-        for (x, y, radius) in self.circles:
+        if circle_id is None:
+            # draw each circle
+            for (x, y, radius) in self.circles:
+                circle = Circle((x, y), radius, fill=False, edgecolor='blue')
+                ax.add_patch(circle)
+        else:
+            # draw only the specified circle
+            (x, y, radius) = self.circles[circle_id]
             circle = Circle((x, y), radius, fill=False, edgecolor='blue')
             ax.add_patch(circle)
         # draw points
