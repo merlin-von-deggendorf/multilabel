@@ -78,13 +78,13 @@ class CircleModel(torch.nn.Module):
 class CircleModelContainer:
     def __init__(self, circle_dataset: CircleSet, neurons_per_circle=4):
         self.circle_dataset = circle_dataset
-        self.models : list[CircleSet]= []
+        self.models : list[CircleModel]= [] # multiple models, one for each circle 
         for i in range(circle_dataset.numCircles):
             model = CircleModel(i,neurons_per_circle=neurons_per_circle).to(device)
             self.models.append(model)
     def train_all(self,dataset, num_epochs=1000, batch_size=32, learning_rate=0.001, early_stopping=0.05):
         for i, model in enumerate(self.models):
-            print(f"Training model for circle {i}")
+            print(f"Training model for circle {i}") # train each model separately
             model.train_model(dataset, num_epochs=num_epochs, batch_size=batch_size, learning_rate=learning_rate, early_stopping=early_stopping)
     def evaluate_all(self, dataset,batch_size=1024,probabilitie_threshold=0.5):
         for model in self.models:
@@ -95,7 +95,7 @@ class CircleModelContainer:
             total = 0
 
             for x_batch, y_batch in dataloader:
-                full_predicts=[]
+                full_predicts=[] #we will store predictions for each model here
                 # generate seperate y_batch for each model
                 for model in self.models:
                     # get logits

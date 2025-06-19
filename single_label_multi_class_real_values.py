@@ -8,15 +8,12 @@ from circle_dataset import CircleSet
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class CircleModel(torch.nn.Module):
-    def __init__(self, numCircles,neurons_per_circle=4):
+    def __init__(self):
         super(CircleModel, self).__init__()
-        self.numCircles = numCircles
         self.net=torch.nn.Sequential(
-            torch.nn.Linear(2, neurons_per_circle*numCircles),
+            torch.nn.Linear(2, 12),
             torch.nn.ReLU(),
-            torch.nn.Linear(neurons_per_circle*numCircles, neurons_per_circle*numCircles),
-            torch.nn.ReLU(),
-            torch.nn.Linear(neurons_per_circle*numCircles, numCircles)
+            torch.nn.Linear(12, 8)
             #Softmax is applied in the loss function (CrossEntropyLoss)
         ) 
 
@@ -57,7 +54,7 @@ class CircleModel(torch.nn.Module):
             total = 0
             for x_batch, y_batch in dataloader:
                 logits = self(x_batch)
-                r1,prediction=logits.max(1)
+                r1,prediction=logits.max(1) # for predictiong the predicted class we use the maximum value
                 correct+=prediction.eq(y_batch).sum().item()
                 total += y_batch.size(0)
             accuracy = correct / total

@@ -8,39 +8,38 @@ from circle_dataset import CircleSet
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class CircleModel(torch.nn.Module):
-    def __init__(self, numCircles,neurons_per_circle=4):
+    def __init__(self):
         super(CircleModel, self).__init__()
-        self.numCircles = numCircles
         self.net=torch.nn.Sequential(
-            torch.nn.Linear(2, neurons_per_circle*numCircles),
+            torch.nn.Linear(2, 12), # Input layer with 2 features (x, y)
+                                    # Hidden layer with 12 neurons
             torch.nn.ReLU(),
-            torch.nn.Linear(neurons_per_circle*numCircles, neurons_per_circle*numCircles),
+            torch.nn.Linear(12, 12), # Hidden layer with 12 neurons
             torch.nn.ReLU(),
-            torch.nn.Linear(neurons_per_circle*numCircles, numCircles)
-            #Softmax is applied in the loss function (CrossEntropyLoss)
+            torch.nn.Linear(12, 8)   # Output layer with 8 neurons (for 8 classes)
+            #Sigmoid is applied in the loss function (BCEWithLogitsLoss) (BinaryCrossEntropyWithLogitsLoss)
         ) 
 
     def forward(self, x):
         return self.net(x)
     
-    
     def train_model(self, dataset, num_epochs=1000, batch_size=32, learning_rate=0.001, early_stopping=0.05):
         
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-        criterion = torch.nn.CrossEntropyLoss()
-        optimizer = optim.Adam(self.parameters(), lr=learning_rate)
+        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True) # Create DataLoader for batching
+        criterion = torch.nn.BCEWithLogitsLoss() # Binary Cross Entropy with Logits Loss fuses Sigmoid and BCE loss
+        optimizer = optim.Adam(self.parameters(), lr=learning_rate) # Adam optimizer
         self.losses = []
         for epoch in range(num_epochs):
             
             self.train()
             avg_loss = 0.0
-            for x_batch, y_batch in dataloader:
-                logits = self(x_batch)
-                loss = criterion(logits, y_batch)
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                avg_loss += loss.item()
+            for x_batch, y_batch in dataloader: # Iterate over batches
+                logits = self(x_batch) # Forward pass
+                loss = criterion(logits, y_batch) # Compute loss
+                optimizer.zero_grad() # Zero the gradients
+                loss.backward() # Backward pass
+                optimizer.step() # Update weights
+                avg_loss += loss.item() 
             avg_loss /= len(dataloader)
             self.losses.append(avg_loss)
             if epoch % 100 == 0:
@@ -49,7 +48,7 @@ class CircleModel(torch.nn.Module):
                 print(f"Epoch {epoch}/{num_epochs}, Loss: {avg_loss:.4f}")
                 print(f"Early stopping at epoch {epoch} with loss {avg_loss:.4f}")
                 break
-    def evaluate(self, dataset,batch_size=1024):
+    def evaluate(self, dataset,batch_size=1024,probabilitie_threshold=0.5):
         self.eval()
         with torch.no_grad():
             dataloader= DataLoader(dataset, batch_size=batch_size, shuffle=False)
@@ -57,9 +56,12 @@ class CircleModel(torch.nn.Module):
             total = 0
             for x_batch, y_batch in dataloader:
                 logits = self(x_batch)
-                r1,prediction=logits.max(1)
-                correct+=prediction.eq(y_batch).sum().item()
-                total += y_batch.size(0)
+                 # get probabilities, then binary predictions
+                probs = torch.sigmoid(logits)
+                preds = (probs >= probabilitie_threshold).float()
+                # count element‐wise correct
+                correct += (preds == y_batch).sum().item()
+                total += y_batch.numel()
             accuracy = correct / total
             print(f"Accuracy: {accuracy:.4f} correct: {correct} total: {total}")
 
@@ -91,10 +93,11 @@ class CircleModel(torch.nn.Module):
 circle_count=8
 circle_model = CircleModel(numCircles=circle_count,neurons_per_circle=4)
 circle_model=circle_model.to(device)
-dataset = CircleSet(minX=0, minY=0, maxX=100, maxY=100, minRadius=10, maxRadius=30, numCircles=circle_count*-1, numPoints=1024)
-# dataset.display()
-circle_model.train_and_evaluate(dataset,split=0.8, num_epochs=50000, batch_size=1024, learning_rate=0.001, early_stopping=0.05)
-circle_model.plot_losses()
+dataset = CircleSet(minX=0, minY=0, maxX=100, maxY=100, minRadius=10, maxRadius=30, numCircles=circle_count, numPoints=256)
+dataset.print()
+dataset.display()
+# circle_model.train_and_evaluate(dataset,split=0.8, num_epochs=50000, batch_size=1024, learning_rate=0.001, early_stopping=0.01)
+# circle_model.plot_losses()
 
 
 
